@@ -2,7 +2,7 @@
 
 Have you ever been annoyed that every time you reboot your Raspberry Pi (or take it to a different network) you have to guess its IP address so that you can ssh into it? No? Well, I have, and that's why I've created this tutorial.
 
-Here, we'll set your Raspberry Pi up to send you an email with its IP address every time it boots using [Gmail](https://gmail.com).
+Here, we'll set your Raspberry Pi up to send you an email with its IP address every time it boots using Gmail.
 
 **Note:** If you feel like this is an overkill, you can always use `nmap`, for example:
 
@@ -10,34 +10,44 @@ Here, we'll set your Raspberry Pi up to send you an email with its IP address ev
 $ nmap -sP 192.168.1.1/24
 ```
 
-## Install and configure ssmtp
+## Install and configure msmtp
 
-This section is partly based on this [cyberciti.biz blog post](https://www.cyberciti.biz/tips/linux-use-gmail-as-a-smarthost.html) (accessed on 18-01-2020).
-
-```
-$ apt-get update && apt-get install ssmtp
-```
-
-Now, configure gmail as a smarthost:
+This section is based on [this forum post](https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=244147#p1496767).
 
 ```
-$ vi /etc/ssmtp/ssmtp.conf
+$ sudo apt-get install msmtp msmtp-mta
 ```
 
-Update this file with the following settings:
+Now open the config file `/etc/msmtprc` and add your credentials:
 
 ```
-AuthUser=you@gmail.com
-AuthPass=Your-Gmail-Password
-FromLineOverride=YES
-mailhub=smtp.gmail.com:587
-UseSTARTTLS=YES
+# Generics
+defaults
+auth           on
+tls            on
+# following is different from ssmtp:
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+# user specific log location, otherwise use /var/log/msmtp.log, however, 
+# this will create an access violation if you are user pi, and have not changes the access rights
+logfile        ~/.msmtp.log
+
+# Gmail specifics
+account        gmail
+host           smtp.gmail.com
+port           587
+
+from          root@raspi-buster
+user           your-gmail-accountname@gmail.com
+password       your-gmail-account-password
+
+# Default
+account default : gmail
 ```
 
 Test it:
 
 ```
-$ echo "Hello world!" | ssmtp you@example.com
+$ echo "Hello world!" | msmtp you@example.com
 ```
 
 **Note:** You might bump into authentication problems on your first try. In my case, Gmail sent me an email alerting that a less secure application was trying to log into my account. I followed the links in the message and changed settings to allow ssmtp to log in. I also had to enable IMAP access on my Gmail settings.
@@ -52,9 +62,9 @@ ip=`ip route list | awk '{print NR,$(NF-2)}'`
 
 {
 	echo To: $mailto
-       	echo Subject: [RasPi] My IP
+       	echo "Subject: [RasPi] My IP"
 	echo "$ip"
-} | /usr/sbin/ssmtp $mailto
+} | /usr/bin/msmtp $mailto
 echo "$ip"
 echo "Finished running at `date`"
 ```
