@@ -18,7 +18,8 @@ This section is based on [this forum post](https://www.raspberrypi.org/forums/vi
 $ sudo apt-get install msmtp msmtp-mta
 ```
 
-Now open the config file `/etc/msmtprc` and add your credentials:
+Now open the config file and add your credentials.
+This file can be found at `~/.msmtprc` or `$XDG_CONFIG_HOME/msmtp/config` if you're using version 1.8.6 or newer, or at `/etc/msmtprc` for older versions.
 
 ```
 # Generics
